@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_gastos/models/expense_data.dart';
 import 'package:gestion_gastos/screens/transaction_form_screen.dart';
+import 'package:gestion_gastos/screens/transaction_historial_screen.dart';
 import 'package:gestion_gastos/widgets/expense_chart.dart';
 
 class SummaryScreen extends StatelessWidget {
@@ -19,6 +20,19 @@ class SummaryScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Resumen Gastos del mes'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TransactionHistorialScreen(),
+                ),
+              );
+            },
+          )
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
