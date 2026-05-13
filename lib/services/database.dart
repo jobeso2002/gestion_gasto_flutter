@@ -70,6 +70,15 @@ class DatabaseService {
     await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
   }
 
+  //funcion actualizar una transaccion
+  Future<void> updateTransaction(TransactionModel.Transaction transaction) async {
+    final db = await database;
+    await db.update('transactions', 
+    transaction.toMap(), 
+    where: 'id = ?', 
+    whereArgs: [transaction.id]);
+  }
+
 
 
 
