@@ -1,90 +1,88 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:gestion_gastos/models/expense_data.dart';
+import 'package:gestion_gastos/models/transaction.dart';
+import 'package:gestion_gastos/providers/transaction_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class ExpenseChart extends StatelessWidget {
-  final List<ExpenseData> expenses;
-
-  const ExpenseChart({
-    super.key,
-    required this.expenses,
-  });
+  const ExpenseChart({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final categories = expenses.map((e) => e.category).toList();
-    final values = expenses.map((e) => e.amount).toList();
+    final transactionProvider = Provider.of<TransactionProvider>(context);
+    final transactions = transactionProvider.transactions;
+
+    final expenses = transactions
+        .where((transaction) => transaction.type == TransactionType.expense)
+        .toList();
+
+    final Map<String, double> categoryTotals = {};
+
+    for (var transaction in expenses) {
+      categoryTotals[transaction.category] =
+          (categoryTotals[transaction.category] ?? 0) +
+              transaction.amount;
+    }
+
+    final categories = categoryTotals.keys.toList();
+
+    // VALIDACIÓN IMPORTANTE
+    if (categories.isEmpty) {
+      return const SizedBox(
+        height: 300,
+        child: Center(
+          child: Text(
+            'No hay gastos registrados',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
 
     return SizedBox(
-      height: 250, // tamaño más pequeño
+      height: 300,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
+            maxY: categoryTotals.values.reduce(
+                  (a, b) => a > b ? a : b,
+                ) +
+                20,
+            barGroups: List.generate(
+              categories.length,
+              (index) {
+                final category = categories[index];
+                final amount = categoryTotals[category]!;
 
-            maxY: values.isEmpty
-                ? 100
-                : values.reduce((a, b) => a > b ? a : b) + 20,
-
-            borderData: FlBorderData(show: false),
-
-            gridData: FlGridData(show: true),
-
+                return BarChartGroupData(
+                  x: index,
+                  barRods: [
+                    BarChartRodData(
+                      toY: amount,
+                      width: 20,
+                    ),
+                  ],
+                );
+              },
+            ),
             titlesData: FlTitlesData(
-              topTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 32,
-                ),
-              ),
-
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 40,
-
                   getTitlesWidget: (value, meta) {
                     if (value.toInt() >= categories.length) {
                       return const SizedBox();
                     }
 
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        categories[value.toInt()],
-                        style: const TextStyle(fontSize: 10),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    return Text(
+                      categories[value.toInt()],
+                      style: const TextStyle(fontSize: 10),
                     );
                   },
                 ),
               ),
-            ),
-
-            barGroups: List.generate(
-              expenses.length,
-              (index) {
-                return BarChartGroupData(
-                  x: index,
-
-                  barRods: [
-                    BarChartRodData(
-                      toY: values[index],
-                      width: 16, // barras más pequeñas
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ],
-                );
-              },
             ),
           ),
         ),

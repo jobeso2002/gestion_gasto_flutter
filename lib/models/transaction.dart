@@ -1,11 +1,11 @@
 enum TransactionType { income, expense }
 
 class Transaction {
-  final String id;
-  final String category;
-  final double amount;
-  final TransactionType type;
-  final DateTime date;
+   String id;
+   String category;
+   double amount;
+   TransactionType type;
+   DateTime date;
 
   Transaction({
     required this.id,
@@ -14,4 +14,14 @@ class Transaction {
     required this.type,
     required this.date,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'category': category,
+      'amount': amount,
+      'type': type == TransactionType.income ? 'income' : 'expense',
+      'date': date.toIso8601String(),
+    };
+  }
 }

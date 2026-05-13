@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:gestion_gastos/models/transaction.dart';
+import 'package:gestion_gastos/providers/transaction_provider.dart';
+import 'package:provider/provider.dart';
 
 class TransactionFormScreen extends StatefulWidget {
-  const TransactionFormScreen({super.key});
+  final Transaction? transaction;
+  const TransactionFormScreen({super.key, this.transaction});
 
   @override
   State<TransactionFormScreen> createState() => _TransactionFormScreenState();
@@ -13,22 +17,19 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   final TextEditingController _descriptionController = TextEditingController();
 
   String _selectedCategory = 'Comida';
+  TransactionType _selectedType = TransactionType.expense;
 
   final List<String> _categories = [
     'Comida',
     'Transporte',
-    'Entretenimiento',  
+    'Entretenimiento',
     'Otros',
   ];
 
-
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registrar Transaccion'),
-      ),
+      appBar: AppBar(title: const Text('Registrar Transaccion')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -38,9 +39,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             children: [
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Monto',
-                ),
+                decoration: const InputDecoration(labelText: 'Monto'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -49,12 +48,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20 ),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción',
-                ),
+                decoration: const InputDecoration(labelText: 'Descripción'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese una descripción';
@@ -75,9 +72,37 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                     _selectedCategory = value!;
                   });
                 },
-                decoration: const InputDecoration(
-                  labelText: 'Categoría',
-                ),
+                decoration: const InputDecoration(labelText: 'Categoría'),
+              ),
+
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile(
+                      title: const Text('Gasto'),
+                      value: TransactionType.expense,
+                      groupValue: _selectedType,
+                      onChanged: (TransactionType? value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile(
+                      title: const Text('Ingreso'),
+                      value: TransactionType.income,
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
@@ -85,15 +110,45 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Aquí puedes manejar la lógica para guardar la transacción
+                    if(_formKey.currentState!.validate()){
+                      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+
+                      if(widget.transaction == null){
+                        transactionProvider.addTransaction(
+                          Transaction(
+                            id: DateTime.now().toString(),
+                            category: _selectedCategory,
+                            amount: double.parse(_amountController.text),
+                            type: _selectedType,
+                            date: DateTime.now(),
+                          )
+                        );
+                      }else{
+                        widget.transaction!.category = _selectedCategory;
+                        widget.transaction!.amount = double.parse(_amountController.text);
+                        widget.transaction!.type = _selectedType;
+                        transactionProvider.notifyListeners();
+                      }
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Transacción guardada')),
+                         SnackBar(content: Text(
+                          widget.transaction == null ? 
+                          'Transacción registrada' : 'Transacción actualizada'
+                        )
+                        )
+
                       );
                       Navigator.pop(context);
                     }
+                  
                   },
-                  child: const Text('Guardar Transacción'),
+                  child: Text(
+                    widget.transaction == null ? 'Guardar Transacción' : 'Actualizar Transacción',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],

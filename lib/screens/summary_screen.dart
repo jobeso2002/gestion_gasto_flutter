@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_gastos/models/expense_data.dart';
+import 'package:gestion_gastos/models/transaction.dart';
+import 'package:gestion_gastos/providers/transaction_provider.dart';
 import 'package:gestion_gastos/screens/transaction_form_screen.dart';
 import 'package:gestion_gastos/screens/transaction_historial_screen.dart';
 import 'package:gestion_gastos/widgets/expense_chart.dart';
+import 'package:provider/provider.dart';
 
 class SummaryScreen extends StatelessWidget {
   const SummaryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<ExpenseData> expenseData = [
-      ExpenseData('Comida', 150.0),
-      ExpenseData('Transporte', 50.0),
-      ExpenseData('Entretenimiento', 100.0),
-      ExpenseData('Otros', 30.0),
-    ];
+    final transactionProvider = Provider.of<TransactionProvider>(context);
+    final transactions = transactionProvider.transactions;
+
+    final totalIncome = transactions
+        .where((transaction) => transaction.type == TransactionType.income)
+        .fold(0.0, (sum, transaction) => sum + transaction.amount);
+
+     final totalExpense = transactions
+        .where((transaction) => transaction.type == TransactionType.expense)
+        .fold(0.0, (sum, transaction) => sum + transaction.amount);   
 
     return Scaffold(
       appBar: AppBar(
@@ -49,7 +56,7 @@ class SummaryScreen extends StatelessWidget {
                 child: ListTile(
                   leading: Icon(Icons.arrow_upward_outlined, color: Colors.green),
                   title: Text('Ingresos'),
-                  subtitle: Text('\$0.0'),
+                  subtitle: Text('\$${totalIncome.toStringAsFixed(2)}'),
                 ),
               ),
               SizedBox(height: 20),
@@ -57,11 +64,11 @@ class SummaryScreen extends StatelessWidget {
                 child: ListTile(
                   leading: Icon(Icons.arrow_downward_outlined, color: Colors.red),
                   title: Text('Gastos'),
-                  subtitle: Text('\$0.0'),
+                  subtitle: Text('\$${totalExpense.toStringAsFixed(2)}'),
                 ),
               ),
               SizedBox(height: 20),
-              ExpenseChart(expenses: expenseData),
+              ExpenseChart(),
         
               SizedBox(height: 20),
         
@@ -75,8 +82,10 @@ class SummaryScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.add),
-                  label: const Text('añadir transacion'),
+                  icon: const Icon(Icons.add, color: Colors.white,),
+                  label: const Text('añadir transacion',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)
+                  ),
                 ),
               ),
             ],
