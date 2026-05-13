@@ -7,8 +7,22 @@ import 'package:gestion_gastos/screens/transaction_historial_screen.dart';
 import 'package:gestion_gastos/widgets/expense_chart.dart';
 import 'package:provider/provider.dart';
 
-class SummaryScreen extends StatelessWidget {
+class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
+
+  @override
+  State<SummaryScreen> createState() => _SummaryScreenState();
+}
+
+class _SummaryScreenState extends State<SummaryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Provider.of<TransactionProvider>(context, listen: false).loadTransactions();
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
