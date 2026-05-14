@@ -8,10 +8,14 @@ import 'package:provider/provider.dart';
 class TransactionHistorialScreen extends StatelessWidget {
   const TransactionHistorialScreen({super.key});
 
+  
+
   @override
   Widget build(BuildContext context) {
     final transactionProvider = Provider.of<TransactionProvider>(context);
     final transactions = transactionProvider.transactions;
+
+    
 
 
     return Scaffold(

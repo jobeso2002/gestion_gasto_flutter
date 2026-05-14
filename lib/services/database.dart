@@ -13,18 +13,17 @@ class DatabaseService {
   DatabaseService._internal();
 
   Future<Database> get database async {
-    if(_database != null) {
+    if (_database != null) {
       return _database!;
     } else {
       _database = await _initDatabase();
       return _database!;
-
     }
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'transanctions.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    String path = join(await getDatabasesPath(), 'transactions.db');
+    return await openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -34,21 +33,32 @@ class DatabaseService {
         category TEXT,
         amount REAL,
         type TEXT,
-        date TEXT
+        date TEXT,
+        description TEXT
       )
     ''');
+    // ✅ CORRECCIÓN: Se agrega columna description desde el inicio
   }
 
+  // ✅ CORRECCIÓN: onUpgrade para migrar la DB existente si ya tenías datos
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE transactions ADD COLUMN description TEXT');
+    }
+  }
 
-  //funcion para insertar una transaccion
-  Future<void> insertTransaction(TransactionModel.Transaction transaction) async {
+  // Insertar una transacción
+  Future<void> insertTransaction(
+      TransactionModel.Transaction transaction) async {
     final db = await database;
-    await db.insert('transactions', 
-    transaction.toMap(), 
-    conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'transactions',
+      transaction.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
-  //funcion para obtener todas las transacciones
+  // Obtener todas las transacciones
   Future<List<TransactionModel.Transaction>> getTransactions() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('transactions');
@@ -58,28 +68,31 @@ class DatabaseService {
         id: maps[i]['id'],
         category: maps[i]['category'],
         amount: maps[i]['amount'],
-        type: maps[i]['type'] == 'income' ? TransactionModel.TransactionType.income : TransactionModel.TransactionType.expense,
+        type: maps[i]['type'] == 'income'
+            ? TransactionModel.TransactionType.income
+            : TransactionModel.TransactionType.expense,
         date: DateTime.parse(maps[i]['date']),
+        // ✅ CORRECCIÓN: Se mapea description desde la DB
+        description: maps[i]['description'],
       );
     });
   }
 
-  //funcion eliminar una transaccion
+  // Eliminar una transacción
   Future<void> deleteTransaction(String id) async {
     final db = await database;
     await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
   }
 
-  //funcion actualizar una transaccion
-  Future<void> updateTransaction(TransactionModel.Transaction transaction) async {
+  // Actualizar una transacción
+  Future<void> updateTransaction(
+      TransactionModel.Transaction transaction) async {
     final db = await database;
-    await db.update('transactions', 
-    transaction.toMap(), 
-    where: 'id = ?', 
-    whereArgs: [transaction.id]);
+    await db.update(
+      'transactions',
+      transaction.toMap(),
+      where: 'id = ?',
+      whereArgs: [transaction.id],
+    );
   }
-
-
-
-
 }

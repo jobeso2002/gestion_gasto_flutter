@@ -13,19 +13,19 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  void addTransaction(Transaction transaction) async {
+  Future<void> addTransaction(Transaction transaction) async {
     _transactions.add(transaction);
     await _databaService.insertTransaction(transaction);
     notifyListeners();
   }
 
-  void deleteTransaction(String id) async{
+  Future<void> deleteTransaction(String id) async{
     _transactions.removeWhere((transaction) => transaction.id == id);
     await _databaService.deleteTransaction(id);
     notifyListeners();
   }
 
-  void updateTransaction(Transaction updatedTransaction) async {
+  Future<void> updateTransaction(Transaction updatedTransaction) async {
     int index = _transactions.indexWhere((transaction) => transaction.id == updatedTransaction.id);
     _transactions[index] = updatedTransaction;
     await _databaService.updateTransaction(updatedTransaction);

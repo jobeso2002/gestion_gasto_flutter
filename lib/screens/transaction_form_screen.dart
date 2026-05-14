@@ -27,9 +27,33 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // ✅ CORRECCIÓN: Pre-cargar datos si es edición, incluyendo description
+    if (widget.transaction != null) {
+      _amountController.text = widget.transaction!.amount.toString();
+      _descriptionController.text = widget.transaction!.description ?? '';
+      _selectedCategory = widget.transaction!.category;
+      _selectedType = widget.transaction!.type;
+    }
+  }
+
+  @override
+  void dispose() {
+    // ✅ BUENA PRÁCTICA: Liberar controllers al destruir el widget
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar Transaccion')),
+      appBar: AppBar(
+        title: Text(
+          widget.transaction == null ? 'Registrar Transacción' : 'Editar Transacción',
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -44,6 +68,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese un monto';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Por favor ingrese un número válido';
                   }
                   return null;
                 },
@@ -110,10 +137,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    if(_formKey.currentState!.validate()){
-                      final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+                    if (_formKey.currentState!.validate()) {
+                      final transactionProvider = Provider.of<TransactionProvider>(
+                        context,
+                        listen: false,
+                      );
 
-                      if(widget.transaction == null){
+                      if (widget.transaction == null) {
                         transactionProvider.addTransaction(
                           Transaction(
                             id: DateTime.now().toString(),
@@ -121,28 +151,40 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                             amount: double.parse(_amountController.text),
                             type: _selectedType,
                             date: DateTime.now(),
-                          )
+                            // ✅ CORRECCIÓN: description ahora se guarda correctamente
+                            description: _descriptionController.text,
+                          ),
                         );
-                      }else{
-                        widget.transaction!.category = _selectedCategory;
-                        widget.transaction!.amount = double.parse(_amountController.text);
-                        widget.transaction!.type = _selectedType;
-                        transactionProvider.notifyListeners();
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                         SnackBar(content: Text(
-                          widget.transaction == null ? 
-                          'Transacción registrada' : 'Transacción actualizada'
-                        )
-                        )
+                      } else {
+                        final updatedTransaction = Transaction(
+                          id: widget.transaction!.id,
+                          category: _selectedCategory,
+                          amount: double.parse(_amountController.text),
+                          type: _selectedType,
+                          date: widget.transaction!.date,
+                          // ✅ CORRECCIÓN: description incluida en actualización
+                          description: _descriptionController.text,
+                        );
 
+                        transactionProvider.updateTransaction(updatedTransaction);
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            widget.transaction == null
+                                ? 'Transacción registrada'
+                                : 'Transacción actualizada',
+                          ),
+                        ),
                       );
                       Navigator.pop(context);
                     }
-                  
                   },
                   child: Text(
-                    widget.transaction == null ? 'Guardar Transacción' : 'Actualizar Transacción',
+                    widget.transaction == null
+                        ? 'Guardar Transacción'
+                        : 'Actualizar Transacción',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
